@@ -1,0 +1,125 @@
+/* Full-page background and overall layout */
+.login-page {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45)),
+    url('./poster.jpg') center/cover no-repeat; /* Make sure the poster.jpg path is correct */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Header and Footer styles */
+.header,
+.footer {
+  height: 90px;
+  display: flex;
+  align-items: center;     
+  padding: 0 5%; /* Adjusted padding for better spacing */
+  color: white;
+  font-weight: 500;
+  background-color: #ffffff00;
+}
+
+.header {
+  justify-content: space-between; /* Pushes content to the edges */
+}
+
+.footer {
+  justify-content: center; /* Centers the footer text */
+  font-size: 0.85rem;
+}
+
+/* Logo image style */
+.logo {
+  height: 100px; /* Use the same height as the header */
+  width: auto;
+  display: block;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Contact Us link color */
+.contact-link {
+  color: white;
+  text-decoration: none;
+}
+
+/* Main content area */
+.main-content {
+  flex: 1; /* Takes remaining space */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8%;
+  gap: 2rem; /* Add some space between the text and the card */
+}
+
+/* Style the text container on the left */
+.login-text {
+  flex: 1;
+  max-width: 500px;
+  text-align: left;
+  color: #fff;
+}
+
+.login-text h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.login-text p {
+  font-size: 1.2rem;
+  line-height: 1.5;
+}
+
+/* Login card styling */
+.login-card {
+  width: min(90%, 380px);
+  padding: 2rem;
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  text-align: left;
+}
+
+/* Login card internal element styling */
+.login-card h2 {
+  margin-bottom: 1rem;
+  font-size: 2.5rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.login-card .options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0.75rem 0 1rem 0;
+  font-size: 0.9rem;
+}
+
+/* Style for "First time user" section */
+.first-time-user {
+  text-align: left;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 10px;
+}
+
+.first-time-user p {
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 5px;
+}
+
+.first-time-user a {
+  font-size: 0.9rem;
+  color: #0066cc;
+  text-decoration: none;
+}
+
+.first-time-user a:hover {
+  text-decoration: underline;
+}
+

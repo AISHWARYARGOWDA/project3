@@ -1,0 +1,41 @@
+:root {
+    --brand-green: #00ef2cfd;
+    --brand-blue: #0072CE;
+    --brand-light: #E6F2F0;
+    --brand-dark: #000000;
+  }
+  
+  body {
+    background-color: var(--brand-light);
+    font-family: 'Segoe UI', Arial, sans-serif;
+  }
+  
+  .app .list-group-item.active {
+    background-color: var(--brand-blue);
+    border-color: var(--brand-blue);
+    color: white;
+  }
+  
+  .btn-primary {
+    background-color: var(--brand-blue);
+    border-color: var(--brand-blue);
+  }
+  .btn-primary:hover {
+    background-color: var(--brand-green);
+    border-color: var(--brand-green);
+  }
+  
+  .brand-gradient {
+    background: linear-gradient(90deg, var(--brand-dark), var(--brand-blue));
+    color: #fff;
+  }
+  
+  .card-shadow {
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,.08);
+  }
+  
+  .header-logo {
+    height: 100px;
+    margin-right: 10px;
+    
+  }

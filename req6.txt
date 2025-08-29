@@ -1,64 +1,131 @@
-const handleSubmit = async (payload, type) => {
-  try {
-    let url = "http://localhost:8080/api/payroll";
+package com.example.payroll.model;
 
-    if (type === "save") {
-      url += "/save";
-    } else if (type === "draft") {
-      url += "/draft";
+import jakarta.persistence.Embeddable;
+
+@Embeddable
+public class Instruction {
+    private String paymentCurrency;
+    private String debitAccount;
+    private String date;
+
+    public String getPaymentCurrency() { return paymentCurrency; }
+    public void setPaymentCurrency(String paymentCurrency) { this.paymentCurrency = paymentCurrency; }
+
+    public String getDebitAccount() { return debitAccount; }
+    public void setDebitAccount(String debitAccount) { this.debitAccount = debitAccount; }
+
+    public String getDate() { return date; }
+    public void setDate(String date) { this.date = date; }
+}
+package com.example.payroll.model;
+
+import jakarta.persistence.Embeddable;
+
+@Embeddable
+public class Payment {
+    private String payeeDetails;
+    private String payeeName;
+    private String accountNumber;
+    private String reference;
+    private String amount;
+
+    public String getPayeeDetails() { return payeeDetails; }
+    public void setPayeeDetails(String payeeDetails) { this.payeeDetails = payeeDetails; }
+
+    public String getPayeeName() { return payeeName; }
+    public void setPayeeName(String payeeName) { this.payeeName = payeeName; }
+
+    public String getAccountNumber() { return accountNumber; }
+    public void setAccountNumber(String accountNumber) { this.accountNumber = accountNumber; }
+
+    public String getReference() { return reference; }
+    public void setReference(String reference) { this.reference = reference; }
+
+    public String getAmount() { return amount; }
+    public void setAmount(String amount) { this.amount = amount; }
+}
+package com.example.payroll.model;
+
+import jakarta.persistence.*;
+import java.util.List;
+
+@Entity
+@Table(name = "payroll_batches")
+public class PayrollBatch {
+
+    @Id
+    private Long id;
+
+    @Embedded
+    private Instruction instruction;
+
+    @ElementCollection
+    @CollectionTable(name = "payments", joinColumns = @JoinColumn(name = "batch_id"))
+    private List<Payment> payments;
+
+    private String status;
+    private String createdAt;
+    private String updatedAt;
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public Instruction getInstruction() { return instruction; }
+    public void setInstruction(Instruction instruction) { this.instruction = instruction; }
+
+    public List<Payment> getPayments() { return payments; }
+    public void setPayments(List<Payment> payments) { this.payments = payments; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+
+    public String getCreatedAt() { return createdAt; }
+    public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
+
+    public String getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(String updatedAt) { this.updatedAt = updatedAt; }
+}
+package com.example.payroll.repository;
+
+import com.example.payroll.model.PayrollBatch;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface PayrollBatchRepository extends JpaRepository<PayrollBatch, Long> {
+}
+package com.example.payroll.service;
+
+import com.example.payroll.model.PayrollBatch;
+import com.example.payroll.repository.PayrollBatchRepository;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class PayrollService {
+
+    private final PayrollBatchRepository repository;
+
+    public PayrollService(PayrollBatchRepository repository) {
+        this.repository = repository;
     }
 
-    const response = await axios.post(url, payload);
-    console.log("✅ Saved:", response.data);
-
-    // navigate after success
-    navigate("/managepayroll");
-  } catch (err) {
-    if (err.response) {
-      console.error("❌ Backend error:", err.response.data);
-    } else if (err.request) {
-      console.error("❌ No response from backend:", err.request);
-    } else {
-      console.error("❌ Request error:", err.message);
+    public PayrollBatch saveBatch(PayrollBatch batch) {
+        return repository.save(batch);
     }
-    alert("Error saving payroll batch");
-  }
-};
-try {
-    const response = await axios.post("http://localhost:8080/api/payroll", batchData);
-    console.log("Saved:", response.data);
-    window.location.href = "/manage-payroll"; // navigate on success
-  } catch (err) {
-    console.error("Error saving batch:", err);
-    alert("Error saving payroll batch");
-  }
-};
-const saveBatch = async (status) => {
-  const payload = {
-    paymentCurrency: instruction.paymentCurrency,
-    debitAccount: instruction.debitAccount,
-    date: instruction.date,
-    payments,
-  };
 
-  const url =
-    status === "SAVED"
-      ? "http://localhost:8080/api/payroll/save"
-      : "http://localhost:8080/api/payroll/draft";
+    public List<PayrollBatch> getAllBatches() {
+        return repository.findAll();
+    }
 
-  try {
-    await axios.post(url, payload);
-    navigate("/manage-payroll");
-  } catch (error) {
-    console.error(
-      "SaveBatch failed:",
-      error.response ? error.response.data : error.message
-    );
-  }
-};
+    public PayrollBatch getBatchById(Long id) {
+        return repository.findById(id).orElse(null);
+    }
+}
 package com.example.payroll.controller;
 
-import com.example.payroll.model.PayrollInstruction;
+import com.example.payroll.model.PayrollBatch;
 import com.example.payroll.service.PayrollService;
 import org.springframework.web.bind.annotation.*;
 
@@ -66,7 +133,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/payroll")
-@CrossOrigin(origins = "http://localhost:3000") // allow React to call API
+@CrossOrigin(origins = "http://localhost:3000") // React frontend
 public class PayrollController {
 
     private final PayrollService service;
@@ -75,65 +142,18 @@ public class PayrollController {
         this.service = service;
     }
 
-    // Save payroll instruction
-    @PostMapping
-    public PayrollInstruction createPayroll(@RequestBody PayrollInstruction instruction) {
-        return service.saveInstruction(instruction);
+    @PostMapping("/batch")
+    public PayrollBatch saveOrSubmitBatch(@RequestBody PayrollBatch batch) {
+        return service.saveBatch(batch);
     }
 
-    // Get all instructions
-    @GetMapping
-    public…
-@RestController
-@RequestMapping("/api/payroll")
-@CrossOrigin(origins = "http://localhost:3000") 
-public class PayrollController {
-
-    private final PayrollService service;
-
-    public PayrollController(PayrollService service) {
-        this.service = service;
+    @GetMapping("/batch")
+    public List<PayrollBatch> getAllBatches() {
+        return service.getAllBatches();
     }
 
-    // Save & Submit
-    @PostMapping("/save")
-    public PayrollInstruction savePayroll(@RequestBody PayrollInstruction instruction) {
-        instruction.setStatus("SAVED"); // important
-        return service.saveInstruction(instruction);
-    }
-
-    // Save as Draft
-    @PostMapping("/draft")
-    public PayrollInstruction draftPayroll(@RequestBody PayrollInstruction instruction) {
-        instruction.setStatus("DRAFT"); // important
-        return service.saveInstruction(instruction);
-    }
-
-    // Get all
-    @GetMapping
-    public List<PayrollInstruction> getAllPayrolls() {
-        return service.getAllInstructions();
-    }
-
-    // Get by Id
-    @GetMapping("/{id}")
-    public PayrollInstruction getPayrollById(@PathVariable Long id) {
-        return service.getInstructionById(id);
-    }
-
-    // Get all drafts
-    @GetMapping("/drafts")
-    public List<PayrollInstruction> getDrafts() {
-        return service.getInstructionsByStatus("DRAFT");
-    }
-
-    // Get all saved
-    @GetMapping("/saved")
-    public List<PayrollInstruction> getSaved() {
-        return service.getInstructionsByStatus("SAVED");
+    @GetMapping("/batch/{id}")
+    public PayrollBatch getBatchById(@PathVariable Long id) {
+        return service.getBatchById(id);
     }
 }
-}
-
-
-

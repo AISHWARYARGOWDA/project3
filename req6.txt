@@ -1,3 +1,12 @@
+ try {
+    const response = await axios.post("http://localhost:8080/api/payroll", batchData);
+    console.log("Saved:", response.data);
+    window.location.href = "/manage-payroll"; // navigate on success
+  } catch (err) {
+    console.error("Error saving batch:", err);
+    alert("Error saving payroll batch");
+  }
+};
 const saveBatch = async (status) => {
   const payload = {
     paymentCurrency: instruction.paymentCurrency,
@@ -99,4 +108,5 @@ public class PayrollController {
     }
 }
 }
+
 

@@ -1,0 +1,315 @@
+package com.example.payroll.model;
+
+import jakarta.persistence.*;
+import java.time.LocalDate;
+import java.util.List;
+
+@Entity
+public class PayrollInstruction {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String paymentCurrency;
+    private String debitAccount;
+    private LocalDate date;
+
+    private String status;
+
+    @OneToMany(mappedBy = "instruction", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Payment> payments;
+
+    // getters and setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getPaymentCurrency() { return paymentCurrency; }
+    public void setPaymentCurrency(String paymentCurrency) { this.paymentCurrency = paymentCurrency; }
+
+    public String getDebitAccount() { return debitAccount; }
+    public void setDebitAccount(String debitAccount) { this.debitAccount = debitAccount; }
+
+    public LocalDate getDate() { return date; }
+    public void setDate(LocalDate date) { this.date = date; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+
+    public List<Payment> getPayments() { return payments; }
+    public void setPayments(List<Payment> payments) {
+        this.payments = payments;
+        if (payments != null) {
+            payments.forEach(p -> p.setInstruction(this));
+        }
+    }
+}
+package com.example.payroll.model;
+
+import jakarta.persistence.*;
+
+@Entity
+public class Payment {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String payeeDetails;
+    private String payeeName;
+    private String accountNumber;
+    private String reference;
+    private Double amount;
+
+    @ManyToOne
+    @JoinColumn(name = "instruction_id")
+    private PayrollInstruction instruction;
+
+    // getters and setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getPayeeDetails() { return payeeDetails; }
+    public void setPayeeDetails(String payeeDetails) { this.payeeDetails = payeeDetails; }
+
+    public String getPayeeName() { return payeeName; }
+    public void setPayeeName(String payeeName) { this.payeeName = payeeName; }
+
+    public String getAccountNumber() { return accountNumber; }
+    public void setAccountNumber(String accountNumber) { this.accountNumber = accountNumber; }
+
+    public String getReference() { return reference; }
+    public void setReference(String reference) { this.reference = reference; }
+
+    public Double getAmount() { return amount; }
+    public void setAmount(Double amount) { this.amount = amount; }
+
+    public PayrollInstruction getInstruction() { return instruction; }
+    public void setInstruction(PayrollInstruction instruction) { this.instruction = instruction; }
+}
+package com.example.payroll.repository;
+
+import com.example.payroll.model.PayrollInstruction;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface PayrollInstructionRepository extends JpaRepository<PayrollInstruction, Long> {}
+
+package com.example.payroll.repository;
+
+import com.example.payroll.model.Payment;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface PaymentRepository extends JpaRepository<Payment, Long> {}
+
+package com.example.payroll.service;
+
+import com.example.payroll.model.PayrollInstruction;
+import com.example.payroll.repository.PayrollInstructionRepository;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class PayrollService {
+
+    private final PayrollInstructionRepository repository;
+
+    public PayrollService(PayrollInstructionRepository repository) {
+        this.repository = repository;
+    }
+
+    public PayrollInstruction saveInstruction(PayrollInstruction instruction) {
+        return repository.save(instruction);
+    }
+
+    public List<PayrollInstruction> getAllInstructions() {
+        return repository.findAll();
+    }
+
+    public PayrollInstruction getInstructionById(Long id) {
+        return repository.findById(id).orElse(null);
+    }
+}
+
+package com.example.payroll.controller;
+
+import com.example.payroll.model.PayrollInstruction;
+import com.example.payroll.service.PayrollService;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/payroll")
+@CrossOrigin(origins = "http://localhost:3000") // Allow React frontend
+public class PayrollController {
+
+    private final PayrollService service;
+
+    public PayrollController(PayrollService service) {
+        this.service = service;
+    }
+
+    @PostMapping
+    public PayrollInstruction createPayroll(@RequestBody PayrollInstruction instruction) {
+        return service.saveInstruction(instruction);
+    }
+
+    @GetMapping
+    public List<PayrollInstruction> getAllPayrolls() {
+        return service.getAllInstructions();
+    }
+
+    @GetMapping("/{id}")
+    public PayrollInstruction getPayrollById(@PathVariable Long id) {
+        return service.getInstructionById(id);
+    }
+}
+
+const saveBatch = async (status) => {
+  const payload = {
+    paymentCurrency: instruction.paymentCurrency,
+    debitAccount: instruction.debitAccount,
+    date: instruction.date,
+    status,
+    payments,
+  };
+
+  await fetch("http://localhost:8080/api/payroll", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  window.location.href = "/manage-payroll";
+};
+
+package a10testing.basic;
+
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+class CustomerUtilsTest {
+
+    @Test
+    void testIsValidPhone() {
+        String phone = "9876543210";
+        assertTrue(phone.matches("\\d{10}"));
+    }
+
+    @Test
+    void testIsValidEmail() {
+        String email = "test@gmail.com";
+        assertTrue(email.contains("@"));
+        assertTrue(email.endsWith(".com"));
+    }
+}
+package a10testing.service;
+
+import com.example.demo.model.Customer;
+import com.example.demo.repository.CustomerRepository;
+import com.example.demo.service.CustomerService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
+import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+class CustomerServiceTest {
+
+    @Mock
+    private CustomerRepository repository;
+
+    @InjectMocks
+    private CustomerService service;
+
+    private Customer customer;
+
+    @BeforeEach
+    void setup() {
+        MockitoAnnotations.openMocks(this);
+        customer = new Customer(1L, "Alice", "9876543210", "alice@gmail.com", "Savings");
+    }
+
+    @Test
+    void testSaveCustomer() {
+        when(repository.save(any(Customer.class))).thenReturn(customer);
+        Customer saved = service.saveCustomer(customer);
+        assertEquals("Alice", saved.getName());
+    }
+
+    @Test
+    void testGetCustomerById() {
+        when(repository.findById(1L)).thenReturn(Optional.of(customer));
+        Customer found = service.getCustomerById(1L);
+        assertNotNull(found);
+        assertEquals("Alice", found.getName());
+    }
+}
+package a10testing.controller;
+
+import com.example.demo.controller.CustomerController;
+import com.example.demo.model.Customer;
+import com.example.demo.service.CustomerService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import java.util.*;
+
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+class CustomerControllerTest {
+
+    private MockMvc mockMvc;
+
+    @Mock
+    private CustomerService service;
+
+    @InjectMocks
+    private CustomerController controller;
+
+    private Customer customer;
+
+    @BeforeEach
+    void setup() {
+        MockitoAnnotations.openMocks(this);
+        mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
+        customer = new Customer(1L, "Alice", "9876543210", "alice@gmail.com", "Savings");
+    }
+
+    @Test
+    void testGetCustomerById() throws Exception {
+        when(service.getCustomerById(1L)).thenReturn(customer);
+
+        mockMvc.perform(get("/customers/1")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Alice"));
+    }
+}
+package a10testing;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+
+@SpringBootTest
+class CustomerApplicationTests {
+
+    @Test
+    void contextLoads() {
+    }
+}
+

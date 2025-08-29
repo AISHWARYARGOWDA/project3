@@ -1,4 +1,30 @@
- try {
+const handleSubmit = async (payload, type) => {
+  try {
+    let url = "http://localhost:8080/api/payroll";
+
+    if (type === "save") {
+      url += "/save";
+    } else if (type === "draft") {
+      url += "/draft";
+    }
+
+    const response = await axios.post(url, payload);
+    console.log("✅ Saved:", response.data);
+
+    // navigate after success
+    navigate("/managepayroll");
+  } catch (err) {
+    if (err.response) {
+      console.error("❌ Backend error:", err.response.data);
+    } else if (err.request) {
+      console.error("❌ No response from backend:", err.request);
+    } else {
+      console.error("❌ Request error:", err.message);
+    }
+    alert("Error saving payroll batch");
+  }
+};
+try {
     const response = await axios.post("http://localhost:8080/api/payroll", batchData);
     console.log("Saved:", response.data);
     window.location.href = "/manage-payroll"; // navigate on success
@@ -108,5 +134,6 @@ public class PayrollController {
     }
 }
 }
+
 
 

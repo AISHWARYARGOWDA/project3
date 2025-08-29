@@ -1,0 +1,77 @@
+package com.example.payroll.controller;
+
+import com.example.payroll.model.PayrollInstruction;
+import com.example.payroll.service.PayrollService;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/payroll")
+@CrossOrigin(origins = "http://localhost:3000") // allow React to call API
+public class PayrollController {
+
+    private final PayrollService service;
+
+    public PayrollController(PayrollService service) {
+        this.service = service;
+    }
+
+    // Save payroll instruction
+    @PostMapping
+    public PayrollInstruction createPayroll(@RequestBody PayrollInstruction instruction) {
+        return service.saveInstruction(instruction);
+    }
+
+    // Get all instructions
+    @GetMapping
+    public…
+@RestController
+@RequestMapping("/api/payroll")
+@CrossOrigin(origins = "http://localhost:3000") 
+public class PayrollController {
+
+    private final PayrollService service;
+
+    public PayrollController(PayrollService service) {
+        this.service = service;
+    }
+
+    // Save & Submit
+    @PostMapping("/save")
+    public PayrollInstruction savePayroll(@RequestBody PayrollInstruction instruction) {
+        instruction.setStatus("SAVED"); // important
+        return service.saveInstruction(instruction);
+    }
+
+    // Save as Draft
+    @PostMapping("/draft")
+    public PayrollInstruction draftPayroll(@RequestBody PayrollInstruction instruction) {
+        instruction.setStatus("DRAFT"); // important
+        return service.saveInstruction(instruction);
+    }
+
+    // Get all
+    @GetMapping
+    public List<PayrollInstruction> getAllPayrolls() {
+        return service.getAllInstructions();
+    }
+
+    // Get by Id
+    @GetMapping("/{id}")
+    public PayrollInstruction getPayrollById(@PathVariable Long id) {
+        return service.getInstructionById(id);
+    }
+
+    // Get all drafts
+    @GetMapping("/drafts")
+    public List<PayrollInstruction> getDrafts() {
+        return service.getInstructionsByStatus("DRAFT");
+    }
+
+    // Get all saved
+    @GetMapping("/saved")
+    public List<PayrollInstruction> getSaved() {
+        return service.getInstructionsByStatus("SAVED");
+    }
+}

@@ -1,3 +1,26 @@
+const saveBatch = async (status) => {
+  const payload = {
+    paymentCurrency: instruction.paymentCurrency,
+    debitAccount: instruction.debitAccount,
+    date: instruction.date,
+    payments,
+  };
+
+  const url =
+    status === "SAVED"
+      ? "http://localhost:8080/api/payroll/save"
+      : "http://localhost:8080/api/payroll/draft";
+
+  try {
+    await axios.post(url, payload);
+    navigate("/manage-payroll");
+  } catch (error) {
+    console.error(
+      "SaveBatch failed:",
+      error.response ? error.response.data : error.message
+    );
+  }
+};
 package com.example.payroll.controller;
 
 import com.example.payroll.model.PayrollInstruction;
@@ -76,3 +99,4 @@ public class PayrollController {
     }
 }
 }
+

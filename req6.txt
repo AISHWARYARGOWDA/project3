@@ -1,3 +1,59 @@
+reference: `REF-${Date.now()}`,
+const handlePaymentChange = (index, e) => {
+  const { name, value } = e.target;
+  setPayments((prev) => {
+    const updated = [...prev];
+
+    if (name === "amount") {
+      updated[index][name] = value.replace(/[^0-9]/g, "");
+    } else if (name === "accountNumber") {
+      // only digits, max 12
+      updated[index][name] = value.replace(/[^0-9]/g, "").slice(0, 12);
+    } else {
+      updated[index][name] = value;
+    }
+
+    return updated;
+  });
+};
+<input
+  className="form-control form-control-sm"
+  name="accountNumber"
+  value={p.accountNumber}
+  onChange={(e) => handlePaymentChange(i, e)}
+  minLength={12}
+  maxLength={12}
+  required
+/>
+const saveBatch = async (status) => {
+  // validate account numbers
+  const invalidAccount = payments.some((p) => !/^\d{12}$/.test(p.accountNumber));
+  if (invalidAccount) {
+    alert("Each account number must be exactly 12 digits.");
+    return;
+  }
+
+  const batch = {
+    id: Date.now(),
+    instruction,
+    payments,
+    status,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  try {
+    await axios.post(`${BASE_URL}/batch`, batch);
+    alert(`Batch ${status} successfully!`);
+    window.location.href = "/manage-payroll";
+  } catch (error) {
+    console.error(error);
+    alert("Failed to save batch. Check console for details.");
+  }
+};
+
+
+
 import React, { useState } from "react";
 import axios from "axios";
 import PrimaryButton from "../../common/components/PrimaryButton";
@@ -364,4 +420,5 @@ public class PayrollController {
         return service.getBatchById(id);
     }
 }
+
 

@@ -1,3 +1,93 @@
+package com.example.payroll;
+
+import com.example.payroll.model.PayrollBatch;
+import com.example.payroll.model.Payment;
+import com.example.payroll.repository.PayrollBatchRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+@SpringBootTest
+class PayrollBatchValidationTest {
+
+    @Autowired
+    private PayrollBatchRepository repository;
+
+    private PayrollBatch existingBatch;
+
+    @BeforeEach
+    void setup() {
+        existingBatch = repository.findAll().stream().findFirst().orElse(null);
+        assertNotNull(existingBatch, "⚠️ No PayrollBatch found in DB. Please insert test data first.");
+    }
+
+    // ✅ 1. Batch exists
+    @Test
+    void testBatchExists() {
+        assertNotNull(existingBatch, "Batch should exist in DB");
+    }
+
+    // ✅ 2. Debit account is not empty
+    @Test
+    void testDebitAccountNotEmpty() {
+        assertNotNull(existingBatch.getInstruction().getDebitAccount(), "Debit Account should not be null");
+        assertFalse(existingBatch.getInstruction().getDebitAccount().isEmpty(), "Debit Account should not be empty");
+    }
+
+    // ✅ 3. Payment currency is not empty
+    @Test
+    void testPaymentCurrencyNotEmpty() {
+        assertNotNull(existingBatch.getInstruction().getPaymentCurrency(), "Payment Currency should not be null");
+        assertFalse(existingBatch.getInstruction().getPaymentCurrency().isEmpty(), "Payment Currency should not be empty");
+    }
+
+    // ✅ 4. Date is present
+    @Test
+    void testDateNotEmpty() {
+        assertNotNull(existingBatch.getInstruction().getDate(), "Date should not be null");
+        assertFalse(existingBatch.getInstruction().getDate().isEmpty(), "Date should not be empty");
+    }
+
+    // ✅ 5. Account number is exactly 12 digits
+    @Test
+    void testAccountNumberIs12Digits() {
+        for (Payment payment : existingBatch.getPayments()) {
+            assertTrue(payment.getAccountNumber().matches("^\\d{12}$"),
+                    "Account number must be exactly 12 digits");
+        }
+    }
+
+    // ✅ 6. Amount is numeric
+    @Test
+    void testAmountIsNumeric() {
+        for (Payment payment : existingBatch.getPayments()) {
+            assertTrue(payment.getAmount().matches("^\\d+$"),
+                    "Amount must be numeric only");
+        }
+    }
+
+    // ✅ 7. No empty payment rows
+    @Test
+    void testNoEmptyPaymentRow() {
+        for (Payment payment : existingBatch.getPayments()) {
+            assertNotNull(payment.getPayeeDetails(), "PayeeDetails must not be null");
+            assertFalse(payment.getPayeeDetails().isEmpty(), "PayeeDetails must not be empty");
+
+            assertNotNull(payment.getPayeeName(), "PayeeName must not be null");
+            assertFalse(payment.getPayeeName().isEmpty(), "PayeeName must not be empty");
+
+            assertNotNull(payment.getAccountNumber(), "AccountNumber must not be null");
+            assertFalse(payment.getAccountNumber().isEmpty(), "AccountNumber must not be empty");
+
+            assertNotNull(payment.getAmount(), "Amount must not be null");
+            assertFalse(payment.getAmount().isEmpty(), "Amount must not be empty");
+        }
+    }
+}
+
 reference: `REF-${Date.now()}`,
 const handlePaymentChange = (index, e) => {
   const { name, value } = e.target;
@@ -420,5 +510,6 @@ public class PayrollController {
         return service.getBatchById(id);
     }
 }
+
 
 

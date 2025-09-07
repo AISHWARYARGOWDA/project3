@@ -11,23 +11,30 @@ public class PayrollService {
     }
 
     public PayrollBatch saveBatch(PayrollBatch batch) {
-        // Save the payroll batch first
-        PayrollBatch saved = batchRepository.save(batch);
+        // Just save batch (Draft / Submitted), no balance change
+        return batchRepository.save(batch);
+    }
 
-        // If the batch is submitted, reduce account balance
-        if ("Submitted".equalsIgnoreCase(batch.getStatus())) {
-            double totalAmount = batch.getPayments().stream()
-                    .mapToDouble(p -> Double.parseDouble(p.getAmount()))
-                    .sum();
+    @Transactional
+    public PayrollBatch approveBatch(Long batchId) {
+        PayrollBatch batch = batchRepository.findById(batchId)
+                .orElseThrow(() -> new RuntimeException("Batch not found"));
 
-            // 🔹 Call your decrement query directly
-            balanceRepository.decrement(
-                batch.getInstruction().getDebitAccount(),
-                BigDecimal.valueOf(totalAmount)
-            );
-        }
+        // change status
+        batch.setStatus("Approved");
 
-        return saved;
+        // calculate total
+        double totalAmount = batch.getPayments().stream()
+                .mapToDouble(p -> Double.parseDouble(p.getAmount()))
+                .sum();
+
+        // deduct balance
+        balanceRepository.decrement(
+            batch.getInstruction().getDebitAccount(),
+            BigDecimal.valueOf(totalAmount)
+        );
+
+        return batchRepository.save(batch);
     }
 
     public List<PayrollBatch> getAllBatches() {
@@ -735,6 +742,7 @@ public class PayrollController {
         return service.getBatchById(id);
     }
 }
+
 
 
 

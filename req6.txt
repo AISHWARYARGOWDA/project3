@@ -1,9 +1,8 @@
-package com.example.demo.config;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.config.Customizer;
 
 @Configuration
 public class SecurityConfig {
@@ -11,12 +10,11 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())   // disable CSRF for Postman testing
+            .csrf(csrf -> csrf.disable())   // disable CSRF so POST works in Postman
             .authorizeHttpRequests(auth -> auth
-                .anyRequest().authenticated()  // require login for all endpoints
+                .anyRequest().authenticated()   // ✅ every request just needs username/password
             )
-            .formLogin(form -> form.permitAll())   // enable login form
-            .httpBasic(); // allow Basic Auth (for Postman)
+            .httpBasic(Customizer.withDefaults()); // ✅ Basic Auth only
 
         return http.build();
     }
@@ -533,6 +531,7 @@ public class PayrollController {
         return service.getBatchById(id);
     }
 }
+
 
 
 

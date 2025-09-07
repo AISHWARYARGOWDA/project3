@@ -1,3 +1,167 @@
+[10:46, 9/7/2025] Aishwarya: package com.example.demo.model;
+
+import jakarta.persistence.*;
+import java.util.Set;
+
+@Entity
+public class Customer {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String username;
+    private String password;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    private Set<String> roles;
+
+    // getters & setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
+
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
+
+    public Set<String> getRoles() { return roles; }
+    public void setRoles(Set<String> roles) { this.roles = roles; }
+}
+[10:46, 9/7/2025] Aishwarya: package com.example.demo.repository;
+
+import com.example.demo.model.Customer;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.Optional;
+
+public interface CustomerRepository extends JpaRepository<Customer, Long> {
+    Optional<Customer> findByUsername(String username);
+}
+[10:47, 9/7/2025] Aishwarya: package com.example.demo.service;
+
+import com.example.demo.model.Customer;
+import com.example.demo.repository.CustomerRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.*;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.stereotype.Service;
+
+import java.util.stream.Collectors;
+
+@Service
+public class CustomUserDetailsService implements UserDetailsService {
+
+    @Autowired
+    private CustomerRepository customerRepository;
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        Customer customer = customerRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+
+        return new User(
+                customer.getUsername(),
+                customer.getPassword(),
+                customer.getRoles().stream()
+                        .map(SimpleGrantedAuthority::new)
+                        .collect(Collectors.toList())
+        );
+    }
+}
+[10:47, 9/7/2025] Aishwarya: package com.example.demo.config;
+
+import com.example.demo.service.CustomUserDetailsService;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+public class SecurityConfig {
+
+    private final CustomUserDetailsService userDetailsService;
+
+    public SecurityConfig(CustomUserDetailsService userDetailsService) {
+        this.userDetailsService = userDetailsService;
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public DaoAuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider auth = new DaoAuthenticationProvider();
+        auth.setUserDetailsService(userDetailsService);
+        auth.setPasswordEncoder(passwordEncoder());
+        return auth;
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .authorizeHttpRequests(auth -> auth
+                    .requestMatchers("/admin/**").hasRole("ADMIN")
+                    .requestMatchers("/user/**").hasAnyRole("USER", "ADMIN")
+                    .anyRequest().authenticated()
+            )
+            .formLogin(form -> form
+                    .loginPage("/login").permitAll()
+            )
+            .logout(logout -> logout.permitAll());
+
+        return http.build();
+    }
+}
+[10:47, 9/7/2025] Aishwarya: package com.example.demo.controller;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class DemoController {
+
+    @GetMapping("/user/hello")
+    public String userHello() {
+        return "Hello USER!";
+    }
+
+    @GetMapping("/admin/hello")
+    public String adminHello() {
+        return "Hello ADMIN!";
+    }
+
+    @GetMapping("/")
+    public String home() {
+        return "Welcome to the secured app!";
+    }
+}
+ package com.example.demo;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class SpringBootApp {
+    public static void main(String[] args) {
+        SpringApplication.run(SpringBootApp.class, args);
+    }
+}
+[10:47, 9/7/2025] Aishwarya: INSERT INTO customer (username, password)
+VALUES ('admin', '$2a$10$Dow1euv9iLm/3FvYxTQfX.Vq8YlC2A4i3Wcxk1AUbA/J3fVuR1a9y'); -- password = admin123
+
+INSERT INTO customer (username, password)
+VALUES ('user', '$2a$10$OZHObYVVqvHFe6XyT7qYB.O6tZ5FSm7yZsY6V9AFn82WZLLOlU5pi'); -- password = user123
+
+-- Insert roles
+INSERT INTO customer_roles (customer_id, roles) VALUES (1, 'ROLE_ADMIN');
+INSERT INTO customer_roles (customer_id, roles) VALUES (1, 'ROLE_USER');
+INSERT INTO customer_roles (customer_id, roles) VALUES (2, 'ROLE_USER');
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -531,6 +695,7 @@ public class PayrollController {
         return service.getBatchById(id);
     }
 }
+
 
 
 

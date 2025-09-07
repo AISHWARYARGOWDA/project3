@@ -1,3 +1,43 @@
+@Service
+public class PayrollService {
+
+    private final PayrollBatchRepository batchRepository;
+    private final AccountBalanceRepository balanceRepository;
+
+    public PayrollService(PayrollBatchRepository batchRepository,
+                          AccountBalanceRepository balanceRepository) {
+        this.batchRepository = batchRepository;
+        this.balanceRepository = balanceRepository;
+    }
+
+    public PayrollBatch saveBatch(PayrollBatch batch) {
+        // Save the payroll batch first
+        PayrollBatch saved = batchRepository.save(batch);
+
+        // If the batch is submitted, reduce account balance
+        if ("Submitted".equalsIgnoreCase(batch.getStatus())) {
+            double totalAmount = batch.getPayments().stream()
+                    .mapToDouble(p -> Double.parseDouble(p.getAmount()))
+                    .sum();
+
+            // 🔹 Call your decrement query directly
+            balanceRepository.decrement(
+                batch.getInstruction().getDebitAccount(),
+                BigDecimal.valueOf(totalAmount)
+            );
+        }
+
+        return saved;
+    }
+
+    public List<PayrollBatch> getAllBatches() {
+        return batchRepository.findAll();
+    }
+
+    public PayrollBatch getBatchById(Long id) {
+        return batchRepository.findById(id).orElse(null);
+    }
+}
 package com.example.demo.model;
 
 import jakarta.persistence.*;
@@ -695,6 +735,7 @@ public class PayrollController {
         return service.getBatchById(id);
     }
 }
+
 
 
 

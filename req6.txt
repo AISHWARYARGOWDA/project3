@@ -1,4 +1,16 @@
 const onDebitAccountChange = (e) => {
+  const selectedAccountNumber = e.target.value;
+  const source = accountOptions.length > 0 ? accountOptions : fallbackAccounts;
+  const selectedAccount = source.find(acc => acc.accountNumber === selectedAccountNumber);
+
+  setInstruction(prev => ({
+    ...prev,
+    debitAccount: selectedAccountNumber,
+    paymentCurrency: selectedAccount?.currency || prev.paymentCurrency
+  }));
+};
+
+const onDebitAccountChange = (e) => {
   const val = e.target.value;
   const source = accountOptions.length > 0 ? accountOptions : fallbackAccounts;
   const selectedAccount = source.find(acc => acc.accountNumber === val);
@@ -1144,6 +1156,7 @@ public class PayrollController {
         return service.getBatchById(id);
     }
 }
+
 
 
 

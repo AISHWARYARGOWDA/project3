@@ -1,3 +1,18 @@
+<select
+  name="debitAccount"
+  value={instruction.debitAccount}
+  onChange={onDebitAccountChange}
+  className="form-select"
+  required
+>
+  <option value="">Select Debit Account</option>
+  {visibleAccounts.map((acc) => (
+    <option key={acc.accountNumber} value={acc.accountNumber}>
+      {acc.accountName}
+    </option>
+  ))}
+</select>
+
 const [accountOptions, setAccountOptions] = useState([]);
 const fallbackAccounts = [
   { accountNumber: "Corporate INR", accountName: "Corporate INR", currency: "INR" },
@@ -1094,6 +1109,7 @@ public class PayrollController {
         return service.getBatchById(id);
     }
 }
+
 
 
 

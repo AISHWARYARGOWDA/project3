@@ -1,3 +1,9 @@
+<select>
+  <option value="">Select Currency</option>
+  <option value="INR">INR</option>
+  <option value="USD">USD</option>
+</select>
+
 <select
   name="debitAccount"
   value={instruction.debitAccount}
@@ -1109,6 +1115,7 @@ public class PayrollController {
         return service.getBatchById(id);
     }
 }
+
 
 
 

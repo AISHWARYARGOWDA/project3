@@ -1,3 +1,215 @@
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { useLocation, useNavigate } from "react-router-dom";
+
+const BASE_URL = "http://localhost:8080/api/payroll";
+const ACCOUNT_OPTIONS_API = "http://localhost:8080/api/account/options";
+
+export default function PayrollPayment() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const editingBatch = location.state?.batch;
+
+  const [instruction, setInstruction] = useState(editingBatch?.instruction || {
+    paymentCurrency: "",
+    debitAccount: "",
+    date: "",
+  });
+
+  const [payments, setPayments] = useState(editingBatch?.payments || [
+    {
+      payeeRole: "",
+      payeeName: "",
+      accountNumber: "",
+      reference: `REF-${Date.now()}`,
+      amount: "",
+    },
+  ]);
+
+  const [accountOptions, setAccountOptions] = useState([]);
+  
+  const fallbackAccounts = [
+    { accountNumber: "ACC_INR", accountName: "Corporate INR", currency: "INR" },
+    { accountNumber: "ACC_USD", accountName: "Corporate USD", currency: "USD" }
+  ];
+
+  const visibleAccounts = accountOptions.length > 0 ? accountOptions : fallbackAccounts;
+
+  // Fetch account options from backend
+  useEffect(() => {
+    axios.get(ACCOUNT_OPTIONS_API, { timeout: 5000 })
+      .then(res => {
+        if (Array.isArray(res.data) && res.data.length > 0) {
+          setAccountOptions(res.data);
+        }
+      })
+      .catch(() => {
+        // fallback will be used automatically
+      });
+  }, []);
+
+  // Handle debit account selection
+  const onDebitAccountChange = (e) => {
+    const selectedAccountNumber = e.target.value;
+    const source = accountOptions.length > 0 ? accountOptions : fallbackAccounts;
+    const selectedAccount = source.find(acc => acc.accountNumber === selectedAccountNumber);
+
+    setInstruction(prev => ({
+      ...prev,
+      debitAccount: selectedAccountNumber,
+      paymentCurrency: selectedAccount?.currency || prev.paymentCurrency
+    }));
+  };
+
+  const handleInstructionChange = (e) => {
+    const { name, value } = e.target;
+    setInstruction(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handlePaymentChange = (index, e) => {
+    const { name, value } = e.target;
+    setPayments(prev => {
+      const updated = [...prev];
+      updated[index][name] = name === "amount" ? value.replace(/[^0-9]/g, "") : value;
+      return updated;
+    });
+  };
+
+  const addPaymentRow = () => {
+    setPayments(prev => [
+      ...prev,
+      { payeeRole: "", payeeName: "", accountNumber: "", reference: `REF-${Date.now()}`, amount: "" }
+    ]);
+  };
+
+  const removePaymentRow = (index) => {
+    setPayments(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const saveBatch = async (status) => {
+    const batch = {
+      id: editingBatch?.id || Date.now(),
+      instruction,
+      payments,
+      status,
+      createdAt: editingBatch?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    try {
+      await axios.post(`${BASE_URL}/batch`, batch);
+      navigate("/manage-payroll");
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const totalAmount = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+
+  return (
+    <div className="container p-2">
+      <div className="card p-3">
+        <h2 className="text-center mb-3">Create Payroll Payments</h2>
+
+        <form onSubmit={(e) => { e.preventDefault(); saveBatch("Submitted"); }}>
+          {/* Instruction Details */}
+          <h4>Instruction Details</h4>
+          <div className="row mb-3">
+            <div className="col">
+              <label>Debit Account *</label>
+              <select
+                name="debitAccount"
+                value={instruction.debitAccount}
+                onChange={onDebitAccountChange}
+                className="form-select"
+                required
+              >
+                <option value="">Select Debit Account</option>
+                {visibleAccounts.map(acc => (
+                  <option key={acc.accountNumber} value={acc.accountNumber}>
+                    {acc.accountName}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="col">
+              <label>Currency *</label>
+              <select
+                name="paymentCurrency"
+                value={instruction.paymentCurrency}
+                onChange={handleInstructionChange}
+                className="form-select"
+                required
+              >
+                <option value="">Select Currency</option>
+                <option value="INR">INR</option>
+                <option value="USD">USD</option>
+              </select>
+            </div>
+
+            <div className="col">
+              <label>Date *</label>
+              <input
+                type="date"
+                name="date"
+                value={instruction.date}
+                onChange={handleInstructionChange}
+                className="form-control"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Payment Details */}
+          <h4>Payment Details</h4>
+          <div style={{ maxHeight: "300px", overflowY: "auto", border: "1px solid #ccc", borderRadius: "5px" }}>
+            <table className="table table-bordered text-center mb-0">
+              <thead className="table-light" style={{ position: "sticky", top: 0 }}>
+                <tr>
+                  <th>S. No.</th>
+                  <th>Reference</th>
+                  <th>Payee Role</th>
+                  <th>Payee Name</th>
+                  <th>Account Number</th>
+                  <th>Amount</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {payments.map((p, i) => (
+                  <tr key={i}>
+                    <td>{i + 1}</td>
+                    <td><input className="form-control form-control-sm" name="reference" value={p.reference} readOnly /></td>
+                    <td><input className="form-control form-control-sm" name="payeeRole" value={p.payeeRole} onChange={e => /^[a-zA-Z\s]*$/.test(e.target.value) && handlePaymentChange(i, e)} required /></td>
+                    <td><input className="form-control form-control-sm" name="payeeName" value={p.payeeName} onChange={e => /^[a-zA-Z\s]*$/.test(e.target.value) && handlePaymentChange(i, e)} required /></td>
+                    <td><input className="form-control form-control-sm" name="accountNumber" value={p.accountNumber} onChange={e => /^\d*$/.test(e.target.value) && handlePaymentChange(i, e)} maxLength={12} required /></td>
+                    <td><input className="form-control form-control-sm text-end" type="text" name="amount" value={p.amount} onChange={e => handlePaymentChange(i, e)} required /></td>
+                    <td><button type="button" className="btn btn-sm btn-danger" onClick={() => removePaymentRow(i)}>Remove</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div style={{ position: "sticky", bottom: 0, background: "#0055a4", color: "white", padding: "8px 12px", textAlign: "right" }}>
+            <strong>Total Amount: {totalAmount}</strong>
+          </div>
+
+          {/* Buttons */}
+          <div className="d-flex justify-content-between align-items-center my-2">
+            <button type="button" className="btn btn-outline-secondary" onClick={addPaymentRow}>+ Add Payment Row</button>
+            <div className="d-flex gap-2">
+              <button type="button" className="btn btn-outline-secondary" onClick={() => saveBatch("Draft")}>Save as Draft</button>
+              <button type="button" className="btn btn-outline-secondary" onClick={() => saveBatch("Submitted")}>Submit</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 const onDebitAccountChange = (e) => {
   const selectedAccountNumber = e.target.value;
   const source = accountOptions.length > 0 ? accountOptions : fallbackAccounts;
@@ -1156,6 +1368,7 @@ public class PayrollController {
         return service.getBatchById(id);
     }
 }
+
 
 
 

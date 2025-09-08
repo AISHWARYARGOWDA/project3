@@ -1,3 +1,26 @@
+const onDebitAccountChange = (e) => {
+  const val = e.target.value;
+
+  // Use backend accounts if available, otherwise fallback
+  const source = accountOptions.length > 0 ? accountOptions : fallbackAccounts;
+  const selectedAccount = source.find(acc => acc.accountNumber === val);
+
+  if (selectedAccount) {
+    // Always update currency based on selected account
+    setInstruction(prev => ({
+      ...prev,
+      debitAccount: val,
+      paymentCurrency: selectedAccount.currency
+    }));
+  } else {
+    // fallback: just update debitAccount
+    setInstruction(prev => ({
+      ...prev,
+      debitAccount: val
+    }));
+  }
+};
+
 <select>
   <option value="">Select Currency</option>
   <option value="INR">INR</option>
@@ -1115,6 +1138,7 @@ public class PayrollController {
         return service.getBatchById(id);
     }
 }
+
 
 
 

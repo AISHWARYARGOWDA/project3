@@ -1,3 +1,8 @@
+{instruction.paymentCurrency && <option value={instruction.paymentCurrency}>{instruction.paymentCurrency}</option>}
+{["INR", "USD"].filter(c => c !== instruction.paymentCurrency).map(c => (
+  <option key={c} value={c}>{c}</option>
+))}
+
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -1368,6 +1373,7 @@ public class PayrollController {
         return service.getBatchById(id);
     }
 }
+
 
 
 

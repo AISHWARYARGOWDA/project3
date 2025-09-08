@@ -1,3 +1,35 @@
+const [accountOptions, setAccountOptions] = useState([]);
+const fallbackAccounts = [
+  { accountNumber: "Corporate INR", accountName: "Corporate INR", currency: "INR" },
+  { accountNumber: "Corporate USD", accountName: "Corporate USD", currency: "USD" }
+];
+
+useEffect(() => {
+  axios.get(ACCOUNT_OPTIONS_API, { timeout: 5000 })
+    .then(res => {
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        setAccountOptions(res.data);
+      }
+    })
+    .catch(() => {
+      // fallback is handled automatically
+    });
+}, []);
+
+const visibleAccounts = accountOptions.length > 0 ? accountOptions : fallbackAccounts;
+
+const onDebitAccountChange = (e) => {
+  const val = e.target.value;
+  const source = accountOptions.length > 0 ? accountOptions : fallbackAccounts;
+  const selectedAccount = source.find(acc => acc.accountNumber === val);
+
+  setInstruction(prev => ({
+    ...prev,
+    debitAccount: val,
+    paymentCurrency: selectedAccount?.currency || prev.paymentCurrency
+  }));
+};
+
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -1062,6 +1094,7 @@ public class PayrollController {
         return service.getBatchById(id);
     }
 }
+
 
 
 

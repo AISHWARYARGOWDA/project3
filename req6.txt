@@ -1,3 +1,58 @@
+useEffect(() => {
+  const fetchAccounts = async () => {
+    try {
+      const res = await axios.get(${BASE_URL}/account/options);
+      setAccountOptions(res.data);
+    } catch (error) {
+      console.error("Error fetching accounts:", error);
+    }
+  };
+  fetchAccounts();
+}, []);
+const fetchBalance = async (accountNumber) => {
+  try {
+    const res = await axios.get(${BASE_URL}/account/balance);
+    const account = res.data.find((acc) => acc.accountNumber === accountNumber);
+    setBalance(account ? account.balance : 0);
+  } catch (error) {
+    console.error("Error fetching balance:", error);
+  }
+};
+const handleInstructionChange = (e) => {
+  const { name, value } = e.target;
+  setInstruction((prev) => ({ ...prev, [name]: value }));
+
+  if (name === "debitAccount" && value) {
+    fetchBalance(value);
+  }
+};
+<select
+  name="debitAccount"
+  value={instruction.debitAccount}
+  onChange={handleInstructionChange}
+  className="form-select"
+  required
+>
+  <option value="">Select Debit Account</option>
+  {accountOptions.map((acc, i) => (
+    <option key={i} value={acc}>
+      {acc}
+    </option>
+  ))}
+</select>
+
+{balance !== null && (
+  <p className="mt-1 text-success">
+    Available Balance:{" "}
+    {instruction.paymentCurrency === "USD"
+      ? $${balance.toLocaleString()}
+      : ${balance.toLocaleString("en-IN")} INR}
+  </p>
+)}
+if (balance !== null && totalAmount > balance) {
+  alert("Insufficient balance for this transaction!");
+  return;
+}
 import { useEffect } from "react"; // Add this if not already imported
 
 useEffect(() => {
@@ -753,6 +808,7 @@ public class PayrollController {
         return service.getBatchById(id);
     }
 }
+
 
 
 
